@@ -1,3 +1,3 @@
 pub mod error;
 pub mod entities;
-mod parser_factory;
+pub mod parser_factory;
