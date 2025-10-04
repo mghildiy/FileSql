@@ -1,5 +1,4 @@
-use chrono::Date;
-
+#[derive(Debug, PartialEq)]
 pub enum Value {
     String(String),
     Int(i64),
@@ -8,20 +7,6 @@ pub enum Value {
     Date(chrono::NaiveDate),
     Null
 }
-/*pub struct KV {
-    pub(crate) key: String,
-    pub(crate) value: Value
-}
-
-pub struct Record {
-    columns: Vec<KV>
-}*/
-
-/*pub fn create(kvs: Vec<KV>) -> Record {
-    Record {
-        columns: kvs
-    }
-}*/
 
 pub fn create(values: Vec<Value>) -> Record {
     Record {

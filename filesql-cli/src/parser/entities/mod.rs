@@ -5,3 +5,4 @@ pub mod file_types;
 pub use entities::Record;
 pub mod csv_parser;
 pub mod json_parser;
+mod record_iterator;
