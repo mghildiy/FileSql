@@ -1,6 +1,6 @@
 use crate::lexer::grammar::GrammarType;
 use crate::lexer::keywords::KeywordType;
-use crate::lexer::operators::Operators;
+use crate::lexer::operators::OperatorType;
 use crate::lexer::tokenizer::tokenize;
 use crate::lexer::tokens::Token;
 
@@ -48,7 +48,7 @@ fn tokenize_test() {
     assert_eq!(tokens[5], Token::Identifier("employees".to_string()));
     assert_eq!(tokens[6], Token::Keyword(KeywordType::Where));
     assert_eq!(tokens[7], Token::Identifier("salary".to_string()));
-    assert_eq!(tokens[8], Token::Operator(Operators::GreaterThan));
+    assert_eq!(tokens[8], Token::Operator(OperatorType::GreaterThan));
     assert_eq!(tokens[9], Token::Integer(50000));
 
     sql = "SELECT name FROM employees WHERE department = 'HR' AND salary >= 40000;";
@@ -60,11 +60,11 @@ fn tokenize_test() {
     assert_eq!(tokens[3], Token::Identifier("employees".to_string()));
     assert_eq!(tokens[4], Token::Keyword(KeywordType::Where));
     assert_eq!(tokens[5], Token::Identifier("department".to_string()));
-    assert_eq!(tokens[6], Token::Operator(Operators::Equals));
+    assert_eq!(tokens[6], Token::Operator(OperatorType::Equals));
     assert_eq!(tokens[7], Token::Identifier("HR".to_string()));
     assert_eq!(tokens[8], Token::Keyword(KeywordType::And));
     assert_eq!(tokens[9], Token::Identifier("salary".to_string()));
-    assert_eq!(tokens[10], Token::Operator(Operators::GreaterThanOrEqual));
+    assert_eq!(tokens[10], Token::Operator(OperatorType::GreaterThanOrEqual));
     assert_eq!(tokens[11], Token::Integer(40000));
     assert_eq!(tokens[12], Token::Grammar(GrammarType::Semicolon));
 
@@ -112,16 +112,16 @@ fn tokenize_test() {
     assert_eq!(tokens[4], Token::Keyword(KeywordType::Where));
     assert_eq!(tokens[5], Token::Grammar(GrammarType::OpenParen));
     assert_eq!(tokens[6], Token::Identifier("age".to_string()));
-    assert_eq!(tokens[7], Token::Operator(Operators::GreaterThan));
+    assert_eq!(tokens[7], Token::Operator(OperatorType::GreaterThan));
     assert_eq!(tokens[8], Token::Integer(18));
     assert_eq!(tokens[9], Token::Keyword(KeywordType::And));
     assert_eq!(tokens[10], Token::Identifier("city".to_string()));
-    assert_eq!(tokens[11], Token::Operator(Operators::Equals));
+    assert_eq!(tokens[11], Token::Operator(OperatorType::Equals));
     assert_eq!(tokens[12], Token::Identifier("Delhi".to_string()));
     assert_eq!(tokens[13], Token::Grammar(GrammarType::CloseParen));
     assert_eq!(tokens[14], Token::Keyword(KeywordType::Or));
     assert_eq!(tokens[15], Token::Identifier("city".to_string()));
-    assert_eq!(tokens[16], Token::Operator(Operators::Equals));
+    assert_eq!(tokens[16], Token::Operator(OperatorType::Equals));
     assert_eq!(tokens[17], Token::Identifier("Mumbai".to_string()));
     assert_eq!(tokens[18], Token::Grammar(GrammarType::Semicolon));
 
@@ -134,7 +134,7 @@ fn tokenize_test() {
     assert_eq!(tokens[3], Token::Identifier("users".to_string()));
     assert_eq!(tokens[4], Token::Keyword(KeywordType::Where));
     assert_eq!(tokens[5], Token::Identifier("city".to_string()));
-    assert_eq!(tokens[6], Token::Operator(Operators::Equals));
+    assert_eq!(tokens[6], Token::Operator(OperatorType::Equals));
     assert_eq!(tokens[7], Token::Identifier("New York".to_string()));
     assert_eq!(tokens[8], Token::Grammar(GrammarType::Semicolon));
 
@@ -149,7 +149,7 @@ fn tokenize_test() {
     assert_eq!(tokens[5], Token::Identifier("products".to_string()));
     assert_eq!(tokens[6], Token::Keyword(KeywordType::Where));
     assert_eq!(tokens[7], Token::Identifier("price".to_string()));
-    assert_eq!(tokens[8], Token::Operator(Operators::SmallerThan));
+    assert_eq!(tokens[8], Token::Operator(OperatorType::SmallerThan));
     assert_eq!(tokens[9], Token::Float(99.99));
     assert_eq!(tokens[10], Token::Grammar(GrammarType::Semicolon));
 
@@ -168,7 +168,7 @@ fn tokenize_test() {
     assert_eq!(tokens[8], Token::Identifier("employees".to_string()));
     assert_eq!(tokens[9], Token::Keyword(KeywordType::Where));
     assert_eq!(tokens[10], Token::Identifier("hire_date".to_string()));
-    assert_eq!(tokens[11], Token::Operator(Operators::GreaterThanOrEqual));
+    assert_eq!(tokens[11], Token::Operator(OperatorType::GreaterThanOrEqual));
     assert_eq!(tokens[12], Token::Identifier("2020-01-01".to_string()));
     assert_eq!(tokens[13], Token::Keyword(KeywordType::Group));
     assert_eq!(tokens[14], Token::Keyword(KeywordType::By));

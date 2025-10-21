@@ -1,7 +1,7 @@
 use crate::lexer::errors::LexerError;
 use crate::lexer::grammar::is_grammar_type;
 use crate::lexer::keywords::is_keyword;
-use crate::lexer::operators::{is_operator, Operators};
+use crate::lexer::operators::is_operator;
 use crate::lexer::tokenizer::LEXER_STATE::{IN_IDENTIFIER, START};
 use crate::lexer::tokens::Token;
 use crate::lexer::tokens::Token::{Float, Grammar, Identifier, Integer, Keyword, Operator, StringLiteral};

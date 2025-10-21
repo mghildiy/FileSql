@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum KeywordType {
     Select,
@@ -14,6 +16,29 @@ pub enum KeywordType {
     Avg,
     Min,
     Max
+}
+
+impl Display for KeywordType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let keyword = match self {
+            KeywordType::Select => "SELECT",
+            KeywordType::From => "FROM",
+            KeywordType::Where => "WHERE",
+            KeywordType::Group => "GROUP",
+            KeywordType::Order => "ORDER",
+            KeywordType::By => "BY",
+            KeywordType::And => "AND",
+            KeywordType::Or => "OR",
+            KeywordType::Asc => "ASC",
+            KeywordType::Desc => "DESC",
+            KeywordType::Count => "COUNT",
+            KeywordType::Avg => "AVG",
+            KeywordType::Min => "MIN",
+            KeywordType::Max => "MAX",
+        };
+
+        write!(f, "{}", keyword)
+    }
 }
 
 pub fn is_keyword(word: &str) -> Option<KeywordType> {
