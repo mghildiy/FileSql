@@ -13,6 +13,7 @@ pub enum KeywordType {
     Asc,
     Desc,
     Count,
+    Sum,
     Avg,
     Min,
     Max
@@ -32,6 +33,7 @@ impl Display for KeywordType {
             KeywordType::Asc => "ASC",
             KeywordType::Desc => "DESC",
             KeywordType::Count => "COUNT",
+            KeywordType::Sum => "SUM",
             KeywordType::Avg => "AVG",
             KeywordType::Min => "MIN",
             KeywordType::Max => "MAX",

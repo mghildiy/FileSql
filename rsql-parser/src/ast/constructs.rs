@@ -25,7 +25,7 @@ pub enum SelectItem {
     Aggregate {
         func: AggregateFunc,
         // If its a Count aggregate function, then None means it's a case of Count(*)
-        // Box type so that size of enum is small
+        // using box type so that size of enum is small
         expr: Option<Box<Expr>>
     }
 }
