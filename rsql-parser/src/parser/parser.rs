@@ -1,10 +1,11 @@
 use crate::ast::constructs::SelectItem::{Column, Wildcard};
-use crate::ast::constructs::{AggregateFunc, Expr, SelectItem, SelectStatement, Statement};
+use crate::ast::constructs::{AggregateFunc, BinaryOperator, Expr, FromClause, SelectItem, SelectStatement, Statement, Value};
+use crate::ast::constructs::Expr::Literal;
 use crate::lexer::grammar::GrammarType;
 use crate::lexer::keywords::KeywordType;
 use crate::lexer::operators::OperatorType;
 use crate::lexer::tokens::Token;
-use crate::lexer::tokens::Token::{Grammar, Identifier, Keyword};
+use crate::lexer::tokens::Token::{Float, Grammar, Identifier, Integer, Keyword, StringLiteral};
 use crate::parser::errors::ParserError;
 
 pub struct Parser {
@@ -17,9 +18,8 @@ impl Parser {
         Parser {tokens, position: 0}
     }
 
-    pub fn parse(&self, tokens: Vec<Token>) -> Result<Statement, ParserError> {
-        let mut parser = Parser { tokens, position: 0};
-        parser.parse_statement()
+    pub fn parse(&mut self) -> Result<Statement, ParserError> {
+        self.parse_statement()
     }
 
     fn parse_statement(&mut self) -> Result<Statement, ParserError> {
@@ -36,10 +36,9 @@ impl Parser {
 
     fn parse_select(&mut self) -> Result<SelectStatement, ParserError> {
         self.expect_keyword(KeywordType::Select)?;
-        let select_items = self.parse_columns()?;
         let select_statement = SelectStatement {
-            columns: select_items,
-            from: None,
+            columns: self.parse_columns()?,
+            from: self.parse_from()?,
             where_clause: None,
             group_by: vec![],
             order_by: vec![],
@@ -128,6 +127,8 @@ impl Parser {
 
         // parse between parentheses: either * or expression
         let expr = match self.peek()? {
+            // TODO: but this means even non-count aggregate functions may be paired with *,
+            // so need to handle case by case
             Grammar(GrammarType::Asterisk) => {
                 self.advance()?;
                 None  // COUNT(*) case
@@ -143,6 +144,126 @@ impl Parser {
         self.expect_grammar(GrammarType::CloseParen)?;
 
         Ok(SelectItem::Aggregate { func, expr })
+    }
+
+    fn parse_from(&mut self) -> Result<Option<FromClause>, ParserError> {
+        self.expect_keyword(KeywordType::From)?;
+        let source = self.expect_string_literal()
+            .map_err(|e| ParserError {
+                message: format!("Expected string literal after FROM: {}", e.message),
+                position: e.position
+            })?;
+        Ok(Some(FromClause { source }))
+    }
+
+    fn parse_where(&mut self) -> Result<Option<Expr>, ParserError> {
+        if !matches!(self.peek()?, Token::Keyword(KeywordType::Where)) {
+            return Ok(None);
+        }
+
+        self.expect_keyword(KeywordType::Where)?;
+        let expr = self.parse_or_expression()?;
+        Ok(Some(expr))
+    }
+    fn parse_or_expression(&mut self) -> Result<Expr, ParserError> {
+        let mut left = self.parse_and_expression()?;
+
+        while matches!(self.peek()?, Token::Keyword(KeywordType::Or)) {
+            self.advance()?;
+            let right = self.parse_and_expression()?;
+
+            left = Expr::BinaryOp {
+                left: Box::new(left),
+                operator: BinaryOperator::Or,
+                right: Box::new(right),
+            };
+        }
+
+        Ok(left)
+    }
+
+    fn parse_and_expression(&mut self) -> Result<Expr, ParserError> {
+        let mut left = self.parse_comparison()?;
+
+        while matches!(self.peek()?, Token::Keyword(KeywordType::And)) {
+            self.advance()?;
+            let right = self.parse_comparison()?;
+
+            left = Expr::BinaryOp {
+                left: Box::new(left),
+                operator: BinaryOperator::And,
+                right: Box::new(right),
+            };
+        }
+
+        Ok(left)
+    }
+
+    fn parse_comparison(&mut self) -> Result<Expr, ParserError> {
+        // Left side
+        let left = self.parse_primary()?;
+
+        // Operator
+        let operator = self.parse_comparison_operator()?;
+
+        // Right side
+        let right = self.parse_primary()?;
+
+        Ok(Expr::BinaryOp {
+            left: Box::new(left),
+            operator,
+            right: Box::new(right),
+        })
+    }
+
+    fn parse_comparison_operator(&mut self) -> Result<BinaryOperator, ParserError> {
+        let token = self.advance()?;  // Consume the operator token
+
+        match token {
+            Token::Operator(op) => {
+                match op {
+                    OperatorType::Equals => Ok(BinaryOperator::Equals),
+                    OperatorType::NotEquals => Ok(BinaryOperator::NotEquals),
+                    OperatorType::GreaterThan => Ok(BinaryOperator::GreaterThan),
+                    OperatorType::SmallerThan => Ok(BinaryOperator::LessThan),
+                    OperatorType::GreaterThanOrEqual => Ok(BinaryOperator::GreaterThanOrEquals),
+                    OperatorType::SmallerThanOrEqual => Ok(BinaryOperator::LessThanOrEquals),
+                    _ => Err(ParserError {
+                        message: format!("Expected comparison operator, found {:?}", op),
+                        position: self.position - 1
+                    })
+                }
+            }
+            other => Err(ParserError {
+                message: format!("Expected operator, found {:?}", other),
+                position: self.position - 1
+            })
+        }
+    }
+
+    fn parse_primary(&mut self) -> Result<Expr, ParserError> {
+        match self.peek()? {
+            Identifier(_) => {
+                let identifier = self.expect_identifier()?;
+                Ok(Expr::Column(identifier))
+            },
+            Integer(_) => {
+                let ivalue = self.expect_integer()?;
+                Ok(Expr::Literal(Value::Int(ivalue)))
+            },
+            Float(_) => {
+                let fvalue = self.expect_float()?;
+                Ok(Expr::Literal(Value::Float(fvalue)))
+            },
+            StringLiteral(_) => {
+                let strvalue = self.expect_string_literal()?;
+                Ok(Expr::Literal(Value::String(strvalue)))
+            },
+            _ => Err(ParserError {
+                message: "Expected column or literal".to_string(),
+                position: self.position
+            })
+        }
     }
 
     fn peek(&self) -> Result<&Token, ParserError> {
@@ -163,7 +284,7 @@ impl Parser {
     fn expect_keyword(&mut self, kw: KeywordType) -> Result<(), ParserError> {
         let token = self.peek()?;
         match token {
-            Token::Keyword(k) if k == &kw => {
+            Keyword(k) if k == &kw => {
                 self.advance()?;
                 Ok(())
             },
@@ -189,7 +310,7 @@ impl Parser {
     fn expect_identifier(&mut self) -> Result<String, ParserError> {
         let token = self.advance()?;
         match token {
-            Token::Identifier(ident) => Ok(ident.clone()),
+            Token::Identifier(ident) => Ok(ident),
             _ => Err(
                 ParserError{
                     message: "Expected an identifier".to_string(),
