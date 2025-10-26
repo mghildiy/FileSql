@@ -1,27 +1,49 @@
+use crate::ast::constructs::{FromClause, SelectItem, Statement};
 use crate::lexer::grammar::GrammarType;
 use crate::lexer::keywords::KeywordType;
 use crate::lexer::operators::OperatorType;
 use crate::lexer::tokenizer::tokenize;
 use crate::lexer::tokens::Token;
+use crate::parser::parser::Parser;
 
 #[test]
 fn tokenize_test() {
-    let mut sql = "select * from users;";
+    let mut sql = "select * from \"users.csv\";";
     let mut tokens = tokenize(sql);
     assert_eq!(tokens.len(), 5);
     assert_eq!(tokens[0], Token::Keyword(KeywordType::Select));
     assert_eq!(tokens[1], Token::Grammar(GrammarType::Asterisk));
     assert_eq!(tokens[2], Token::Keyword(KeywordType::From));
-    assert_eq!(tokens[3], Token::Identifier("users".to_string()));
+    assert_eq!(tokens[3], Token::StringLiteral("users.csv".to_string()));
     assert_eq!(tokens[4], Token::Grammar(GrammarType::Semicolon));
+    // test parser
+    let mut parser = Parser::new(tokens);
+    let response = parser.parse().unwrap();
+    match response {
+        Statement::Select(statement) => {
+            let columns = statement.columns;
+            assert_eq!(columns.len(), 1);
+            assert_eq!(columns[0], SelectItem::Wildcard);
+            let from = statement.from;
+            match from {
+                Some(FromClause { source }) => {
+                    assert_eq!(source, "users.csv");
+                },
+                None => panic!("Expected from clause")
+            }
+            assert_eq!(statement.group_by, None);
+            assert_eq!(statement.order_by, None);
+        }
+        _ => panic!("SelectStatement expected")
+    }
 
-    sql = "SELECT name FROM users;";
+    sql = "SELECT name FROM 'users';";
     tokens = tokenize(sql);
     assert_eq!(tokens.len(), 5);
     assert_eq!(tokens[0], Token::Keyword(KeywordType::Select));
     assert_eq!(tokens[1], Token::Identifier("name".to_string()));
     assert_eq!(tokens[2], Token::Keyword(KeywordType::From));
-    assert_eq!(tokens[3], Token::Identifier("users".to_string()));
+    assert_eq!(tokens[3], Token::StringLiteral("users".to_string()));
     assert_eq!(tokens[4], Token::Grammar(GrammarType::Semicolon));
 
     sql = "SELECT id, name, age FROM employees;";
@@ -61,7 +83,7 @@ fn tokenize_test() {
     assert_eq!(tokens[4], Token::Keyword(KeywordType::Where));
     assert_eq!(tokens[5], Token::Identifier("department".to_string()));
     assert_eq!(tokens[6], Token::Operator(OperatorType::Equals));
-    assert_eq!(tokens[7], Token::Identifier("HR".to_string()));
+    assert_eq!(tokens[7], Token::StringLiteral("HR".to_string()));
     assert_eq!(tokens[8], Token::Keyword(KeywordType::And));
     assert_eq!(tokens[9], Token::Identifier("salary".to_string()));
     assert_eq!(tokens[10], Token::Operator(OperatorType::GreaterThanOrEqual));
@@ -117,12 +139,12 @@ fn tokenize_test() {
     assert_eq!(tokens[9], Token::Keyword(KeywordType::And));
     assert_eq!(tokens[10], Token::Identifier("city".to_string()));
     assert_eq!(tokens[11], Token::Operator(OperatorType::Equals));
-    assert_eq!(tokens[12], Token::Identifier("Delhi".to_string()));
+    assert_eq!(tokens[12], Token::StringLiteral("Delhi".to_string()));
     assert_eq!(tokens[13], Token::Grammar(GrammarType::CloseParen));
     assert_eq!(tokens[14], Token::Keyword(KeywordType::Or));
     assert_eq!(tokens[15], Token::Identifier("city".to_string()));
     assert_eq!(tokens[16], Token::Operator(OperatorType::Equals));
-    assert_eq!(tokens[17], Token::Identifier("Mumbai".to_string()));
+    assert_eq!(tokens[17], Token::StringLiteral("Mumbai".to_string()));
     assert_eq!(tokens[18], Token::Grammar(GrammarType::Semicolon));
 
     sql = "SELECT name FROM users WHERE city = 'New York';";
@@ -135,7 +157,7 @@ fn tokenize_test() {
     assert_eq!(tokens[4], Token::Keyword(KeywordType::Where));
     assert_eq!(tokens[5], Token::Identifier("city".to_string()));
     assert_eq!(tokens[6], Token::Operator(OperatorType::Equals));
-    assert_eq!(tokens[7], Token::Identifier("New York".to_string()));
+    assert_eq!(tokens[7], Token::StringLiteral("New York".to_string()));
     assert_eq!(tokens[8], Token::Grammar(GrammarType::Semicolon));
 
     sql = "SELECT name, price FROM products WHERE price < 99.99;";
@@ -169,7 +191,7 @@ fn tokenize_test() {
     assert_eq!(tokens[9], Token::Keyword(KeywordType::Where));
     assert_eq!(tokens[10], Token::Identifier("hire_date".to_string()));
     assert_eq!(tokens[11], Token::Operator(OperatorType::GreaterThanOrEqual));
-    assert_eq!(tokens[12], Token::Identifier("2020-01-01".to_string()));
+    assert_eq!(tokens[12], Token::StringLiteral("2020-01-01".to_string()));
     assert_eq!(tokens[13], Token::Keyword(KeywordType::Group));
     assert_eq!(tokens[14], Token::Keyword(KeywordType::By));
     assert_eq!(tokens[15], Token::Identifier("department".to_string()));

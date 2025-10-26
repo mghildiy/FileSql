@@ -8,8 +8,8 @@ pub struct SelectStatement {
     pub columns: Vec<SelectItem>,
     pub from: Option<FromClause>,
     pub where_clause: Option<Expr>,
-    pub group_by: Vec<Expr>,
-    pub order_by: Vec<OrderByItem>
+    pub group_by: Option<Vec<Expr>>,
+    pub order_by: Option<Vec<OrderByItem>>
 }
 
 #[derive(Debug, PartialEq, Clone)]

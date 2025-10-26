@@ -39,9 +39,9 @@ impl Parser {
         let select_statement = SelectStatement {
             columns: self.parse_columns()?,
             from: self.parse_from()?,
-            where_clause: None,
-            group_by: vec![],
-            order_by: vec![],
+            where_clause: self.parse_where()?,
+            group_by: None,
+            order_by: None,
         };
 
         Ok(select_statement)
@@ -249,15 +249,15 @@ impl Parser {
             },
             Integer(_) => {
                 let value = self.expect_integer()?;
-                Ok(Expr::Literal(Value::Int(value)))
+                Ok(Literal(Value::Int(value)))
             },
             Float(_) => {
                 let value = self.expect_float()?;
-                Ok(Expr::Literal(Value::Float(value)))
+                Ok(Literal(Value::Float(value)))
             },
             StringLiteral(_) => {
                 let value = self.expect_string_literal()?;
-                Ok(Expr::Literal(Value::String(value)))
+                Ok(Literal(Value::String(value)))
             },
             Keyword(KeywordType::True) => {
                 self.advance()?;

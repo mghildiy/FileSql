@@ -171,6 +171,7 @@ fn handle_in_string_state(
             current_word.push(*ch);
             Ok(None)
         } else {
+            current_word.push(*ch);
             let word = current_word.clone();
             current_word.clear();
             *state = LEXER_STATE::START;
@@ -208,6 +209,7 @@ fn handle_start_state(ch: &char, current_word: &mut String, state: &mut LEXER_ST
         return Ok(None)
     } else if *ch == '"' || *ch == '\'' {
         *state = LEXER_STATE::IN_STRING(*ch);
+        current_word.push(*ch);
         return Ok(None)
     } else if is_operator_char(*ch) {
         *state = LEXER_STATE::IN_OPERATOR;
@@ -267,7 +269,11 @@ fn assign_tokens(words: &Vec<String>) -> Vec<Token> {
         } else if word.parse::<f64>().is_ok() {
             tokens.push(Float(word.parse::<f64>().unwrap()));
         } else if word.starts_with("\"") && word.ends_with("\"") {
-            tokens.push(StringLiteral(word.to_string()));
+            let trimmed = &word[1..word.len() - 1];
+            tokens.push(StringLiteral(trimmed.parse().unwrap()));
+        } else if word.starts_with("\'") && word.ends_with("\'") {
+            let trimmed = &word[1..word.len() - 1];
+            tokens.push(StringLiteral(trimmed.parse().unwrap()));
         } else {
             tokens.push(Identifier(word.to_string()));
         }
