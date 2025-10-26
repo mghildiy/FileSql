@@ -182,4 +182,16 @@ fn tokenize_test() {
     assert_eq!(tokens[22], Token::Keyword(KeywordType::Desc));
     assert_eq!(tokens[23], Token::Grammar(GrammarType::Semicolon));
 
+    sql = "SELECT name FROM users WHERE is_adult = TRUE;";
+    tokens = tokenize(sql);
+    assert_eq!(tokens.len(), 9);
+    assert_eq!(tokens[0], Token::Keyword(KeywordType::Select));
+    assert_eq!(tokens[1], Token::Identifier("name".to_string()));
+    assert_eq!(tokens[2], Token::Keyword(KeywordType::From));
+    assert_eq!(tokens[3], Token::Identifier("users".to_string()));
+    assert_eq!(tokens[4], Token::Keyword(KeywordType::Where));
+    assert_eq!(tokens[5], Token::Identifier("is_adult".to_string()));
+    assert_eq!(tokens[6], Token::Operator(OperatorType::Equals));
+    assert_eq!(tokens[7], Token::Keyword(KeywordType::True));
+    assert_eq!(tokens[8], Token::Grammar(GrammarType::Semicolon));
 }

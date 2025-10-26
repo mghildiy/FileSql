@@ -217,7 +217,7 @@ impl Parser {
     }
 
     fn parse_comparison_operator(&mut self) -> Result<BinaryOperator, ParserError> {
-        let token = self.advance()?;  // Consume the operator token
+        let token = self.advance()?;
 
         match token {
             Token::Operator(op) => {
@@ -229,13 +229,13 @@ impl Parser {
                     OperatorType::GreaterThanOrEqual => Ok(BinaryOperator::GreaterThanOrEquals),
                     OperatorType::SmallerThanOrEqual => Ok(BinaryOperator::LessThanOrEquals),
                     _ => Err(ParserError {
-                        message: format!("Expected comparison operator, found {:?}", op),
+                        message: format!("Expected comparison operator, found {}", op),
                         position: self.position - 1
                     })
                 }
             }
             other => Err(ParserError {
-                message: format!("Expected operator, found {:?}", other),
+                message: format!("Expected operator, found {}", other),
                 position: self.position - 1
             })
         }
@@ -248,16 +248,24 @@ impl Parser {
                 Ok(Expr::Column(identifier))
             },
             Integer(_) => {
-                let ivalue = self.expect_integer()?;
-                Ok(Expr::Literal(Value::Int(ivalue)))
+                let value = self.expect_integer()?;
+                Ok(Expr::Literal(Value::Int(value)))
             },
             Float(_) => {
-                let fvalue = self.expect_float()?;
-                Ok(Expr::Literal(Value::Float(fvalue)))
+                let value = self.expect_float()?;
+                Ok(Expr::Literal(Value::Float(value)))
             },
             StringLiteral(_) => {
-                let strvalue = self.expect_string_literal()?;
-                Ok(Expr::Literal(Value::String(strvalue)))
+                let value = self.expect_string_literal()?;
+                Ok(Expr::Literal(Value::String(value)))
+            },
+            Keyword(KeywordType::True) => {
+                self.advance()?;
+                Ok(Literal(Value::Bool(true)))
+            },
+            Keyword(KeywordType::False) => {
+                self.advance()?;
+                Ok(Literal(Value::Bool(false)))
             },
             _ => Err(ParserError {
                 message: "Expected column or literal".to_string(),

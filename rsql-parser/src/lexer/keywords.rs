@@ -5,6 +5,8 @@ pub enum KeywordType {
     Select,
     From,
     Where,
+    True,
+    False,
     Group,
     Order,
     By,
@@ -37,6 +39,8 @@ impl Display for KeywordType {
             KeywordType::Avg => "AVG",
             KeywordType::Min => "MIN",
             KeywordType::Max => "MAX",
+            KeywordType::True => "TRUE",
+            KeywordType::False => "FALSE"
         };
 
         write!(f, "{}", keyword)
@@ -48,6 +52,8 @@ pub fn is_keyword(word: &str) -> Option<KeywordType> {
         "SELECT" => Some(KeywordType::Select),
         "FROM" => Some(KeywordType::From),
         "WHERE" => Some(KeywordType::Where),
+        "TRUE" => Some(KeywordType::True),
+        "FALSE" => Some(KeywordType::False),
         "ORDER" => Some(KeywordType::Order),
         "GROUP" => Some(KeywordType::Group),
         "BY" => Some(KeywordType::By),
