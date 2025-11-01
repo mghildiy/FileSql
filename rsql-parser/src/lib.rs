@@ -1,4 +1,3 @@
 pub mod lexer;
-mod parser;
-mod ast;
-mod tests;
+pub mod parser;
+pub mod ast;

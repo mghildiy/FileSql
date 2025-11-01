@@ -145,7 +145,7 @@ fn handle_in_number_state(
     if(ch.is_digit(10)) {
         current_word.push(*ch);
         Ok(None)
-    } else if(*ch == '.') {
+    } else if *ch == '.' {
         if(current_word.contains(".")) {
             return Err(LexerError { message: "More than one decimals in number".to_string() })
         }

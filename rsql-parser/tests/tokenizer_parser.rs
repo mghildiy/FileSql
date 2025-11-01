@@ -1,10 +1,10 @@
-use crate::ast::constructs::{FromClause, SelectItem, Statement};
-use crate::lexer::grammar::GrammarType;
-use crate::lexer::keywords::KeywordType;
-use crate::lexer::operators::OperatorType;
-use crate::lexer::tokenizer::tokenize;
-use crate::lexer::tokens::Token;
-use crate::parser::parser::Parser;
+use rsql_parser::ast::constructs::{FromClause, SelectItem, Statement};
+use rsql_parser::lexer::grammar::GrammarType;
+use rsql_parser::lexer::keywords::KeywordType;
+use rsql_parser::lexer::operators::OperatorType;
+use rsql_parser::lexer::tokenizer::tokenize;
+use rsql_parser::lexer::tokens::Token;
+use rsql_parser::parser::parser::Parser;
 
 #[test]
 fn tokenize_test() {
