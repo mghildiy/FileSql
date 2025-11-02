@@ -1,5 +1,5 @@
 use crate::ast::constructs::SelectItem::{Column, Wildcard};
-use crate::ast::constructs::{AggregateFunc, BinaryOperator, Expr, FromClause, SelectItem, SelectStatement, Statement, Value};
+use crate::ast::constructs::{AggregateFunc, BinaryOperator, Expr, FromClause, OrderByItem, SelectItem, SelectStatement, Statement, Value};
 use crate::ast::constructs::Expr::Literal;
 use crate::lexer::grammar::GrammarType;
 use crate::lexer::keywords::KeywordType;
@@ -41,10 +41,80 @@ impl Parser {
             from: self.parse_from()?,
             where_clause: self.parse_where()?,
             group_by: None,
-            order_by: None,
+            order_by: self.parse_order_by()?,
         };
 
         Ok(select_statement)
+    }
+
+    fn parse_order_by(&mut self) -> Result<Option<Vec<OrderByItem>>, ParserError> {
+        if !matches!(self.peek()?, Token::Keyword(KeywordType::Order)) {
+            return Ok(None)
+        }
+        self.advance()?;
+        self.expect_keyword(KeywordType::By)?;
+        let mut order_by_items = Vec::new();
+        loop {
+            let item = self.parse_order_by_item()?;
+            order_by_items.push(item);
+
+            match self.peek()? {
+                Grammar(GrammarType::Comma) => {
+                    self.advance()?;  // consume comma, continue loop
+                }
+                Grammar(GrammarType::Semicolon) => {
+                    break;  // order by completed
+                }
+                other => {
+                    return Err(ParserError {
+                        // TODO: extend later for LIMIT or other clauses that come after ORDER BY
+                        message: format!("Expected semicolon, {} found", other),
+                        position: self.position
+                    });
+                }
+            }
+        }
+
+        Ok(Some(order_by_items))
+    }
+
+    fn parse_order_by_item(&mut self) -> Result<OrderByItem, ParserError> {
+        match self.peek()? {
+            // order by column
+            Identifier(_) => {
+                let name = self.expect_identifier()?;
+                let expr = Expr::Column(name);
+
+                let order_flag = self.peek()?;
+                match order_flag {
+                    Keyword(KeywordType::Desc) => {
+                        self.advance()?;
+                        Ok(OrderByItem {
+                            expr,
+                            asc: false
+                        })
+                    },
+                    Keyword(KeywordType::Asc) => {
+                        self.advance()?;
+                        Ok(OrderByItem {
+                            expr,
+                            asc: true
+                        })
+                    },
+                    _ => {
+                        Ok(OrderByItem {
+                            expr,
+                            asc: true
+                        })
+                    }
+                }
+            }
+
+            other => Err(ParserError {
+                message: format!("Expected column for order by, found {:?}", other),
+                position: self.position
+            })
+        }
     }
 
     fn parse_columns(&mut self) -> Result<Vec<SelectItem>, ParserError> {
@@ -155,6 +225,7 @@ impl Parser {
             })?;
         Ok(Some(FromClause { source }))
     }
+
 
     fn parse_where(&mut self) -> Result<Option<Expr>, ParserError> {
         if !matches!(self.peek()?, Token::Keyword(KeywordType::Where)) {
