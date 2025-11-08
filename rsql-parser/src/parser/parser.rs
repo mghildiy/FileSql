@@ -5,7 +5,7 @@ use crate::lexer::grammar::GrammarType;
 use crate::lexer::keywords::KeywordType;
 use crate::lexer::operators::OperatorType;
 use crate::lexer::tokens::Token;
-use crate::lexer::tokens::Token::{Float, Grammar, Identifier, Integer, Keyword, StringLiteral};
+use crate::lexer::tokens::Token::{Float, Grammar, Identifier, Integer, Keyword, Operator, StringLiteral};
 use crate::parser::errors::ParserError;
 
 pub struct Parser {
@@ -40,7 +40,7 @@ impl Parser {
             columns: self.parse_columns()?,
             from: self.parse_from()?,
             where_clause: self.parse_where()?,
-            group_by: None,
+            group_by: self.parse_group_by()?,
             order_by: self.parse_order_by()?,
         };
 
@@ -64,10 +64,10 @@ impl Parser {
                 }
                 Grammar(GrammarType::Semicolon) => {
                     break;  // order by completed
-                }
+                },
+                // TODO: extend later for LIMIT or other clauses that come after ORDER BY
                 other => {
                     return Err(ParserError {
-                        // TODO: extend later for LIMIT or other clauses that come after ORDER BY
                         message: format!("Expected semicolon, {} found", other),
                         position: self.position
                     });
@@ -115,6 +115,155 @@ impl Parser {
                 position: self.position
             })
         }
+    }
+
+    fn parse_group_by(&mut self) -> Result<Option<Vec<Expr>>, ParserError> {
+        if !matches!(self.peek()?, Token::Keyword(KeywordType::Group)) {
+            return Ok(None)
+        }
+        self.advance()?;
+        self.expect_keyword(KeywordType::By)?;
+        let mut group_by_items = Vec::new();
+        loop {
+            let item = self.parse_group_by_expr()?;
+            group_by_items.push(item);
+
+            match self.peek()? {
+                Grammar(GrammarType::Comma) => {
+                    self.advance()?;  // consume comma, continue loop
+                },
+                Grammar(GrammarType::Semicolon) => {
+                    break;  // consume comma, continue loop
+                },
+                Keyword(KeywordType::Order) => {
+                    break;  // group by completed
+                },
+                // TODO: extend later for LIMIT or other clauses that may come after GROUP BY
+                other => {
+                    return Err(ParserError {
+                        message: format!("Expected  ORDER BY or COMMA {} found", other),
+                        position: self.position
+                    });
+                }
+            }
+        }
+
+        Ok(Some(group_by_items))
+    }
+
+    fn parse_group_by_expr(&mut self) -> Result<Expr, ParserError> {
+        let mut first_candidate: Option<Expr> = None;
+        let mut binary_operator: Option<BinaryOperator> = None;
+        let mut second_candidate: Option<Expr> = None;
+        // TODO: adjust for other clauses like LIMIT etc later on
+        while !matches!(self.peek()?, Grammar(GrammarType::Comma)) &&
+            !matches!(self.peek()?, Grammar(GrammarType::Semicolon)) {
+            match self.peek()? {
+                Identifier(ident) => {
+                    match first_candidate {
+                        Some(_) => {
+                            // if first candidate is present, then we check that binary operator must be already present
+                            match binary_operator {
+                                Some(_) => {
+                                    second_candidate = Some(Expr::Column(ident.clone()));
+                                    self.advance()?;
+                                },
+                                None => return Err(ParserError {
+                                        message: "Expected binary operator before a column or number".to_string(),
+                                        position: self.position
+                                    })
+                            }
+                        },
+                        // its first candidate
+                        None => {
+                            first_candidate = Some(Expr::Column(ident.clone()));
+                            self.advance()?;
+                        }
+                    }
+                },
+                Integer(i) => {
+                    match first_candidate {
+                        Some(_) => {
+                            // if first candidate is present, then we check that binary operator must be already present
+                            match binary_operator {
+                                Some(_) => {
+                                    second_candidate = Some(Expr::Literal(Value::Int(*i)));
+                                    self.advance()?;
+                                },
+                                None => return Err(ParserError {
+                                    message: "Expected binary operator before a column or number".to_string(),
+                                    position: self.position
+                                })
+                            }
+                        },
+                        // its first candidate
+                        None => {
+                            first_candidate = Some(Expr::Literal(Value::Int(*i)));
+                            self.advance()?;
+                        }
+                    }
+                },
+                Float(f) => {
+                    match first_candidate {
+                        Some(_) => {
+                            // if first candidate is present, then we check that binary operator must be already present
+                            match binary_operator {
+                                Some(_) => {
+                                    second_candidate = Some(Expr::Literal(Value::Float(*f)));
+                                    self.advance()?;
+                                },
+                                None => return Err(ParserError {
+                                    message: "Expected binary operator before a column or number".to_string(),
+                                    position: self.position
+                                })
+                            }
+                        },
+                        // its first candidate
+                        None => {
+                            first_candidate = Some(Expr::Literal(Value::Float(*f)));
+                            self.advance()?;
+                        }
+                    }
+                },
+                Operator(OperatorType::Add) | Operator(OperatorType::Subtract) | Operator(OperatorType::Multiply)
+                 => {
+                    match first_candidate {
+                        Some(_) => {
+                            binary_operator = Some(BinaryOperator::Add);
+                            self.advance()?;
+                        },
+                        other => return Err(ParserError {
+                            message: format!("Expected identifier or a number as LHS of expression, but found {:?}", other),
+                            position: self.position
+                        })
+                    }
+                },
+                other => return Err(ParserError {
+                    message: format!("Expected identifier or operator or a number, but found {:?}", other),
+                    position: self.position
+                })
+            }
+        }
+
+        match binary_operator {
+            Some(_) => {
+                Ok(Expr::BinaryOp {
+                    left: Box::new(first_candidate.unwrap()),
+                    operator: binary_operator.unwrap(),
+                    right: Box::new(second_candidate.unwrap())
+                })
+            },
+            None => {
+                match first_candidate {
+                    Some(lhs) => Ok(lhs),
+                    _ => return Err(ParserError {
+                                       message: format!("Expected expr after GROUP BY, but found"),
+                                       position: self.position
+                                   })
+                }
+            }
+        }
+
     }
 
     fn parse_columns(&mut self) -> Result<Vec<SelectItem>, ParserError> {
@@ -389,7 +538,7 @@ impl Parser {
     fn expect_identifier(&mut self) -> Result<String, ParserError> {
         let token = self.advance()?;
         match token {
-            Token::Identifier(ident) => Ok(ident),
+            Identifier(ident) => Ok(ident),
             _ => Err(
                 ParserError{
                     message: "Expected an identifier".to_string(),
