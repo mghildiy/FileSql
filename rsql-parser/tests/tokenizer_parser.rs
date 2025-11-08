@@ -305,6 +305,65 @@ fn tokenize_test() {
         _ => panic!("Expected select statement")
     }
 
+    sql = "SELECT department, name, COUNT(*) FROM 'employees' GROUP BY department, name;";
+    tokens = tokenize(sql);
+    assert_eq!(tokens.len(), 17);
+    assert_eq!(tokens[0], Token::Keyword(KeywordType::Select));
+    assert_eq!(tokens[1], Token::Identifier("department".to_string()));
+    assert_eq!(tokens[2], Token::Grammar(GrammarType::Comma));
+    assert_eq!(tokens[3], Token::Identifier("name".to_string()));
+    assert_eq!(tokens[4], Token::Grammar(GrammarType::Comma));
+    assert_eq!(tokens[5], Token::Keyword(KeywordType::Count));
+    assert_eq!(tokens[6], Token::Grammar(GrammarType::OpenParen));
+    assert_eq!(tokens[7], Token::Grammar(GrammarType::Asterisk));
+    assert_eq!(tokens[8], Token::Grammar(GrammarType::CloseParen));
+    assert_eq!(tokens[9], Token::Keyword(KeywordType::From));
+    assert_eq!(tokens[10], Token::StringLiteral("employees".to_string()));
+    assert_eq!(tokens[11], Token::Keyword(KeywordType::Group));
+    assert_eq!(tokens[12], Token::Keyword(KeywordType::By));
+    assert_eq!(tokens[13], Token::Identifier("department".to_string()));
+    assert_eq!(tokens[14], Token::Grammar(GrammarType::Comma));
+    assert_eq!(tokens[15], Token::Identifier("name".to_string()));
+    assert_eq!(tokens[16], Token::Grammar(GrammarType::Semicolon));
+    parser = Parser::new(tokens);
+    response = parser.parse().unwrap();
+    match response {
+        Statement::Select(SelectStatement {
+                              columns,
+                              from,
+                              where_clause,
+                              group_by,
+                              order_by
+                          }) => {
+            assert_eq!(columns.len(), 3);
+            assert_eq!(columns[0], SelectItem::Column("department".to_string()));
+            assert_eq!(columns[1], SelectItem::Column("name".to_string()));
+            assert_eq!(columns[2], SelectItem::Aggregate{
+                func: AggregateFunc::Count,
+                expr: None
+            });
+            match from {
+                Some(FromClause { source }) => {
+                    assert_eq!(source, "employees");
+                },
+                None => panic!("Expected from clause")
+            }
+            assert_eq!(where_clause, None);
+            assert_eq!(order_by, None);
+            match group_by {
+                Some(group_by_items) => {
+                    assert_eq!(group_by_items.len(), 2);
+                    let expected = Expr::Column("department".to_string());
+                    assert_eq!(group_by_items[0], expected);
+                    let expected = Expr::Column("name".to_string());
+                    assert_eq!(group_by_items[1], expected);
+                },
+                None => panic!("Expected order by item")
+            }
+        },
+        _ => panic!("Expected select statement")
+    }
+
 
     sql = "SELECT name FROM users WHERE (age > 18 AND city = 'Delhi') OR city = 'Mumbai';";
     tokens = tokenize(sql);
