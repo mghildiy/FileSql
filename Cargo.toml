@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "filesql-cli",
+    "rcsv-parser",
     "csv-sniffer",
-    "rsql-parser"
-]
+    "rsql-parser",
+    "rsql-executor"]

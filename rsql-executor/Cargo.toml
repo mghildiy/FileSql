@@ -1,0 +1,8 @@
+[package]
+name = "rsql-executor"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+rsql-parser = { path = "../rsql-parser" }
+rcsv-parser =  { path = "../rcsv-parser" }
