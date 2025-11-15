@@ -1,10 +1,10 @@
 use rsql_parser::ast::constructs::Value;
 
 pub struct DataFrame {
-    columns: Vec<String>,
-    rows: Vec<Row>
+    pub columns: Vec<String>,
+    pub rows: Vec<Row>
 }
 
 pub struct Row {
-    values: Vec<Value>
+    pub values: Vec<Value>
 }

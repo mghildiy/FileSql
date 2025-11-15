@@ -15,7 +15,7 @@ pub fn create(values: Vec<Value>) -> Record {
 }
 
 pub struct Record {
-    pub(crate) columns: Vec<Value>
+    pub columns: Vec<Value>
 }
 
 pub struct Table {
