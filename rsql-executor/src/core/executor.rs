@@ -5,8 +5,8 @@ use rcsv_parser::parser::entities::parser::Parse;
 use rcsv_parser::parser::entities::Record;
 use rsql_parser::ast::constructs::{SelectStatement, Statement, Value};
 
-struct Executor {
-    parser: dyn Parse
+pub struct Executor {
+    pub parser: Box<dyn Parse>
 }
 
 impl Executor {
