@@ -68,7 +68,7 @@ fn test_where() {
             assert_eq!(columns[0], "First Name".to_string());
             assert_eq!(columns[1], "Last Name".to_string());
             assert_eq!(columns[2], "Gender".to_string());
-            assert_eq!(rows.len(), 2);
+            assert_eq!(rows.len(), 4);
             assert_eq!(rows[0].values.len(), 3);
             assert_eq!(rows[0].values[0], Value::String("Sheila".to_string()));
             assert_eq!(rows[0].values[1], Value::String("Mahoney".to_string()));
@@ -77,6 +77,12 @@ fn test_where() {
             assert_eq!(rows[1].values[0], Value::String("Ram".to_string()));
             assert_eq!(rows[1].values[1], Value::String("Sharma".to_string()));
             assert_eq!(rows[1].values[2], Value::String("Male".to_string()));
+            assert_eq!(rows[2].values[0], Value::String("Shyam".to_string()));
+            assert_eq!(rows[2].values[1], Value::String("Singh".to_string()));
+            assert_eq!(rows[2].values[2], Value::String("Male".to_string()));
+            assert_eq!(rows[3].values[0], Value::String("Julie".to_string()));
+            assert_eq!(rows[3].values[1], Value::String("Dsouza".to_string()));
+            assert_eq!(rows[3].values[2], Value::String("Female".to_string()));
         },
         Err(_) => panic!("Expected valid result, got error")
     }
